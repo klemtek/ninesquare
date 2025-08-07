@@ -19,6 +19,12 @@ FOOTER_HEIGHT = 50
 WINDOW_WIDTH = BOARD_WIDTH
 WINDOW_HEIGHT = BOARD_HEIGHT + FOOTER_HEIGHT
 
+# End Turn button constants
+BUTTON_WIDTH = 120
+BUTTON_HEIGHT = 35
+BUTTON_X = WINDOW_WIDTH - BUTTON_WIDTH - 10
+BUTTON_Y = BOARD_HEIGHT + 7
+
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -28,6 +34,8 @@ YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (100, 100, 100)
+BUTTON_COLOR = (60, 60, 60)
+BUTTON_HOVER = (80, 80, 80)
 
 # Unit representation
 EMPTY = None
@@ -44,6 +52,7 @@ class NineSquare:
         pygame.display.set_caption("Nine Square")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
+        self.button_font = pygame.font.Font(None, 24)
         
         # Game state
         self.board = self._initialize_board()
@@ -54,6 +63,7 @@ class NineSquare:
         self.game_over = False
         self.winner = None
         self.in_jump_sequence = False  # True when player is in middle of chained jumps
+        self.button_hovered = False  # Track if End Turn button is hovered
         
     def _initialize_board(self) -> List[List[Optional[str]]]:
         """Initialize the 8x8 board with starting positions"""
@@ -93,18 +103,17 @@ class NineSquare:
         """Get all valid jump moves for a unit"""
         jumps = set()
         player = self.board[row][col]
-        opponent = PLAYER2 if player == PLAYER1 else PLAYER1
         
         # Orthogonal directions: north, south, east, west
         directions = [(-1, 0), (1, 0), (0, 1), (0, -1)]
         
         for dr, dc in directions:
-            # Check adjacent square for opponent
+            # Check adjacent square for any piece (opponent OR own piece)
             adj_row, adj_col = row + dr, col + dc
             if (self._is_valid_position(adj_row, adj_col) and 
-                self.board[adj_row][adj_col] == opponent):
+                self.board[adj_row][adj_col] is not None):  # Any piece, not just opponent
                 
-                # Check landing square (beyond opponent)
+                # Check landing square (beyond the piece)
                 land_row, land_col = adj_row + dr, adj_col + dc
                 if (self._is_valid_position(land_row, land_col) and 
                     self.board[land_row][land_col] == EMPTY):
@@ -134,12 +143,6 @@ class NineSquare:
                 elif self.board[row][col] == PLAYER2:
                     p2_units.append((row, col))
         
-        # Check if a player has no units left
-        if not p1_units:
-            return PLAYER2
-        if not p2_units:
-            return PLAYER1
-        
         # Check if all units are in opponent's home area
         p1_all_in_target = all(self._is_in_home_area(row, col, PLAYER1) for row, col in p1_units)
         p2_all_in_target = all(self._is_in_home_area(row, col, PLAYER2) for row, col in p2_units)
@@ -152,18 +155,12 @@ class NineSquare:
         return None
     
     def _perform_jump(self, from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-        """Perform a jump move and remove the jumped unit"""
-        # Calculate the jumped unit's position
-        jumped_row = (from_row + to_row) // 2
-        jumped_col = (from_col + to_col) // 2
-        
-        # Move the unit
+        """Perform a jump move without removing the jumped unit"""
+        # Move the unit (jumped piece stays on the board)
         self.board[to_row][to_col] = self.board[from_row][from_col]
         self.board[from_row][from_col] = EMPTY
         
-        # Remove jumped unit
-        self.board[jumped_row][jumped_col] = EMPTY
-        
+        # Note: We DO NOT remove the jumped unit - it stays on the board
         return True
     
     def _perform_simple_move(self, from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
@@ -172,9 +169,20 @@ class NineSquare:
         self.board[from_row][from_col] = EMPTY
         return True
     
+    def _is_point_in_button(self, pos: Tuple[int, int]) -> bool:
+        """Check if a point is inside the End Turn button"""
+        x, y = pos
+        return (BUTTON_X <= x <= BUTTON_X + BUTTON_WIDTH and 
+                BUTTON_Y <= y <= BUTTON_Y + BUTTON_HEIGHT)
+    
     def handle_click(self, mouse_pos: Tuple[int, int]) -> None:
         """Handle mouse click events"""
         if self.game_over:
+            return
+        
+        # Check if End Turn button was clicked during jump sequence
+        if self.in_jump_sequence and self._is_point_in_button(mouse_pos):
+            self._end_turn()
             return
             
         # Convert mouse position to board coordinates
@@ -207,8 +215,8 @@ class NineSquare:
                 
                 # Check for additional jumps from new position
                 new_jumps = self._get_jump_moves(row, col)
-                if new_jumps and not self.in_jump_sequence:
-                    # Start jump sequence
+                if new_jumps:
+                    # Continue jump sequence
                     self.in_jump_sequence = True
                     self.selected_unit = (row, col)
                     self.possible_moves = set()  # No simple moves during jump sequence
@@ -231,6 +239,11 @@ class NineSquare:
             # Invalid move, deselect if not in jump sequence
             elif not self.in_jump_sequence:
                 self._deselect_unit()
+    
+    def handle_mouse_motion(self, mouse_pos: Tuple[int, int]) -> None:
+        """Handle mouse motion for button hover effects"""
+        if self.in_jump_sequence:
+            self.button_hovered = self._is_point_in_button(mouse_pos)
     
     def _deselect_unit(self) -> None:
         """Deselect current unit and clear possible moves"""
@@ -290,6 +303,25 @@ class NineSquare:
                     # Add white border for visibility
                     pygame.draw.circle(self.screen, WHITE, (center_x, center_y), 30, 2)
     
+    def draw_end_turn_button(self) -> None:
+        """Draw the End Turn button when in jump sequence"""
+        if not self.in_jump_sequence:
+            return
+            
+        # Button color changes on hover
+        button_color = BUTTON_HOVER if self.button_hovered else BUTTON_COLOR
+        
+        # Draw button background
+        button_rect = pygame.Rect(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        pygame.draw.rect(self.screen, button_color, button_rect)
+        pygame.draw.rect(self.screen, WHITE, button_rect, 2)  # White border
+        
+        # Draw button text
+        text = "End Turn"
+        text_surface = self.button_font.render(text, True, WHITE)
+        text_rect = text_surface.get_rect(center=button_rect.center)
+        self.screen.blit(text_surface, text_rect)
+    
     def draw_footer(self) -> None:
         """Draw the footer with game status"""
         # Footer background
@@ -299,19 +331,28 @@ class NineSquare:
         # Status text
         if self.game_over:
             if self.winner:
-                text = f"Player {'1' if self.winner == PLAYER1 else '2'} Wins!"
+                winner_color = 'Red' if self.winner == PLAYER1 else 'Blue'
+                text = f"{winner_color} Wins!"
             else:
                 text = "Game Over"
         else:
-            player_num = '1' if self.current_player == PLAYER1 else '2'
+            player_color = 'Red' if self.current_player == PLAYER1 else 'Blue'
             if self.in_jump_sequence:
-                text = f"Player {player_num}'s Turn - Continue Jumping or End Turn"
+                text = f"{player_color} Turn - Continue Jumping or End Turn"
             else:
-                text = f"Player {player_num}'s Turn"
+                text = f"{player_color} Turn"
         
-        # Render and center text
+        # Render and center text (adjust position if button is showing)
         text_surface = self.font.render(text, True, WHITE)
-        text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, BOARD_HEIGHT + FOOTER_HEIGHT // 2))
+        if self.in_jump_sequence:
+            # Position text to the left when button is showing
+            text_x = 20
+            text_y = BOARD_HEIGHT + FOOTER_HEIGHT // 2
+            text_rect = text_surface.get_rect(left=text_x, centery=text_y)
+        else:
+            # Center text when no button
+            text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, BOARD_HEIGHT + FOOTER_HEIGHT // 2))
+        
         self.screen.blit(text_surface, text_rect)
     
     def draw(self) -> None:
@@ -320,6 +361,7 @@ class NineSquare:
         self.draw_board()
         self.draw_units()
         self.draw_footer()
+        self.draw_end_turn_button()
         pygame.display.flip()
     
     def run(self) -> None:
@@ -338,6 +380,8 @@ class NineSquare:
                         # Start win timer if game just ended
                         if self.game_over and win_time is None:
                             win_time = pygame.time.get_ticks()
+                elif event.type == pygame.MOUSEMOTION:
+                    self.handle_mouse_motion(event.pos)
             
             # Exit after 3 seconds when game is over
             if self.game_over and win_time is not None:

@@ -23,7 +23,7 @@ A two-player turn-based strategy game implemented in Python using Pygame. Player
 
 ### Movement
 1. **Simple Move**: Move one square orthogonally (north, south, east, west) to an empty adjacent square
-2. **Jump**: Jump over an adjacent opponent's unit to an empty square beyond it, capturing the jumped unit
+2. **Jump**: Jump over any adjacent piece (opponent or your own) to an empty square beyond it
 3. **Chain Jumps**: After a successful jump, if more jumps are available from the new position, continue jumping with the same unit
 
 ### Controls
@@ -31,10 +31,10 @@ A two-player turn-based strategy game implemented in Python using Pygame. Player
 - **Click** a highlighted green square to move or jump
 - **Click** the same unit again to deselect
 - **Click** another of your units to switch selection
+- **Click** "End Turn" button during jump sequences to voluntarily end your turn
 
 ### Win Conditions
-- Move all your remaining units into the opponent's home area, OR
-- Capture all opponent units
+- Move all your remaining units into the opponent's home area
 
 ## Installation & Setup
 
