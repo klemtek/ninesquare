@@ -1,10 +1,6 @@
 # NineSquare
 
-A two-player turn-based strategy game implemented in both Python (desktop) and JavaScript (web). Players compete to move all their units into the opponent's home area on an 8x8 checkerboard.
-
-## 🎮 Play Online
-
-**[Play Nine Square in your browser →](https://klemtek.github.io/ninesquare)**
+A two-player turn-based strategy game implemented in Python using Pygame. Players compete to move all their units into the opponent's home area on an 8x8 checkerboard.
 
 ## Game Overview
 
@@ -16,8 +12,7 @@ A two-player turn-based strategy game implemented in both Python (desktop) and J
 - **Two Players**: Player 1 (red circles) vs Player 2 (blue circles)
 - **Strategic Movement**: Simple moves and jumping with chaining capabilities
 - **Visual Interface**: Clear graphics with yellow selection highlights and green move indicators
-- **Win Conditions**: Reach opponent's home area
-- **Available in**: Desktop (Python/Pygame) and Web (JavaScript/HTML5) versions
+- **Win Conditions**: Reach opponent's home area or eliminate all opponent units
 
 ## Game Rules
 
@@ -43,16 +38,11 @@ A two-player turn-based strategy game implemented in both Python (desktop) and J
 
 ## Installation & Setup
 
-### 🌐 Web Version (Recommended)
-**No installation required!** Just visit: [https://klemtek.github.io/ninesquare](https://klemtek.github.io/ninesquare)
-
-### 🖥️ Desktop Version (Python)
-
-#### Prerequisites
+### Prerequisites
 - Python 3.6 or higher
 - pip (Python package installer)
 
-#### Installation
+### Installation
 1. Clone this repository:
    ```bash
    git clone https://github.com/klemtek/ninesquare.git
@@ -64,72 +54,43 @@ A two-player turn-based strategy game implemented in both Python (desktop) and J
    pip install -r requirements.txt
    ```
 
-3. Run the desktop game:
+3. Run the game:
    ```bash
-   python3 orthogonal_checkers.py
+   python orthogonal_checkers.py
    ```
-
-## 🚀 Deployment (For Developers)
-
-### Deploy Your Own Web Version
-1. **Fork this repository**
-2. **Enable GitHub Pages** in your repository settings
-3. **Run the deployment script**:
-   ```bash
-   ./deploy.sh
-   ```
-4. **Access your game** at `https://yourusername.github.io/ninesquare`
-
-### Manual Deployment
-```bash
-# Create gh-pages branch
-git checkout -b gh-pages
-
-# Add web files and deploy
-git add index.html ninesquare.js
-git commit -m "Deploy web version"
-git push origin gh-pages
-
-# Return to main branch
-git checkout main
-```
 
 ## Technical Details
 
 ### Game Architecture
-- **Desktop**: NineSquare class in Python with Pygame rendering
-- **Web**: NineSquare class in JavaScript with HTML5 Canvas rendering
+- **NineSquare Class**: Main game controller handling state, logic, and rendering
 - **Modular Design**: Separate methods for move validation, jump chaining, win detection, and drawing
 - **Event-Driven**: Mouse click handling with position-to-board coordinate conversion
 
 ### Key Components
-- **Board Representation**: 2D array with null (empty), 'P1' (Player 1), 'P2' (Player 2)
+- **Board Representation**: 2D list with None (empty), 'P1' (Player 1), 'P2' (Player 2)
 - **Move Validation**: Orthogonal-only movement with collision detection
 - **Jump Logic**: Multi-jump sequences with automatic chaining capability
 - **Visual Feedback**: Real-time highlighting of selected units and valid moves
 
 ### Constants
 - Board: 8x8 grid, 80x80 pixel squares
-- Window: 640x640 pixels (board only in web version)
+- Window: 640x690 pixels (640x640 board + 50 pixel footer)
 - Units: 30-pixel radius circles with white borders
 
 ## Development
 
 ### Code Structure
 ```
-orthogonal_checkers.py    # Desktop Python/Pygame version
-index.html               # Web version HTML structure
-ninesquare.js           # Web version JavaScript game logic
-requirements.txt        # Python dependencies
-deploy.sh              # Deployment script for GitHub Pages
-README.md             # This file
+orthogonal_checkers.py    # Main game implementation
+requirements.txt          # Python dependencies
+README.md                # This file
 ```
 
-### Key Methods (Both Versions)
-- `getSimpleMoves()`: Calculate valid single-square moves
-- `getJumpMoves()`: Calculate valid jump targets
-- `handleClick()`: Process mouse input and game state changes
-- `checkWinCondition()`: Determine game end conditions
+### Key Methods
+- `_get_simple_moves()`: Calculate valid single-square moves
+- `_get_jump_moves()`: Calculate valid jump targets
+- `handle_click()`: Process mouse input and game state changes
+- `_check_win_condition()`: Determine game end conditions
 - `draw()`: Render complete game state
 
 ## Contributing
@@ -142,7 +103,6 @@ This project is designed for educational purposes and game development learning.
 - Add sound effects and animations
 - Create different board sizes or rule variations
 - Add network multiplayer support
-- Mobile app versions (React Native, Flutter)
 
 ## License
 
@@ -150,4 +110,4 @@ This project is open source. Feel free to use and modify as needed.
 
 ---
 
-**Created by klemtek** | **Available in Python + Pygame and JavaScript + HTML5 Canvas**
+**Created by klemtek** | **Python + Pygame Implementation** 
